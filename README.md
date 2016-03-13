@@ -8,7 +8,7 @@ HTTPはまだ使わずにTCPでやりとりするだけです．
 
 ### server.php
 
-TCP接続を受理し，「Hello World [`N`]」のように1秒ごとにクライアントに送信します．
+TCP接続を受理し，「Hello World [`N`]」のように1秒ごとにクライアントに送信します．  
 合計3回繰り返されます．**1人ずつ順番に処理されます．**
 
 ### client.php
@@ -26,8 +26,8 @@ server.php と client.php をいい感じに自動実行＆自動終了してく
 
 ### server.php
 
-TCP接続を受理し，「Hello World [`N`]」のように1秒ごとにクライアントに送信します．
-合計3回繰り返されます．**複数人同時に処理されます．**
+TCP接続を受理し，「Hello World [`N`]」のように1秒ごとにクライアントに送信します．  
+合計3回繰り返されます．プロセスを`fork`するため，**複数人同時に処理されます．**
 
 ### client.php
 
@@ -43,15 +43,24 @@ server.php と client.php をいい感じに自動実行＆自動終了してく
 HTTP/1.0に対応したサーバで，assets にあるファイルを返します．  
 **TCPコネクションを1ファイルごとに毎回生成します．**
 
-## 04-http-11-server (server.php)
+## 04-keepalive-http-11-server (server.php)
 
 HTTP/1.1に対応したサーバで，assets にあるファイルを返します．  
 **TCPコネクションを再利用します．**
 
 <!--
 
-## 05-http-11-streaming-server
+## 05-streaming-http-11-server
 
-HTTP/1.1の`Transfer-Encoding: chunked`に対応したサーバ．  
+HTTP/1.1の `Transfer-Encoding: chunked` を利用してストリーミングを実現します．  
+最近はWebSocketを使うほうが主流ですが，依然としてこちらの方法も利用できます．
+
+### client.html
+
+JavaScript製のクライアントです．サーバから送信されてきたメッセージをリアルタイムに表示します．
+
+### server.php
+
+「Hello World [`N`]」のように1秒ごとにクライアントに送信します．
 
 -->
