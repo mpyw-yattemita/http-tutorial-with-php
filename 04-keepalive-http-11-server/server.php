@@ -1,36 +1,34 @@
 <?php
 
-// ターミナルに読み出しつつ配列で返す関数
-function readlines($fp) {
+/**
+ * ターミナルに読み出しつつ，リクエストヘッダを配列で返す関数
+ *
+ * @param resource $con TCPクライアントソケット
+ * @return array|bool HTTPリクエストヘッダの配列，または更新連打のエラー時にfalse
+ */
+function read_headers($con) {
     $lines = [];
-    do {
-        $lines[] = $line = fgets($fp);
-        if ($line === false) {
-            // ブラウザ更新連打してると終端チェックしててもここでfalseになることがある
-            return [];
-        }
+    while (true) {
+        $line = fgets($con);
+        if ($line === false) return []; // ブラウザ更新連打対策
         echo $line;
-    } while ("\r\n" !== $line);
+        if ($line === "\r\n") break; // 空行が現れたらそこで終わりとみなす
+        $lines[] = $line;
+    }
     return $lines;
 }
 
-// ターミナルに書きつつ相手にも返信する関数
-function write($fp, $body) {
-    if (is_resource($body)) {
-        // ファイルポインタのときは内容を移す
-        echo "…データ…\r\n";
-        stream_copy_to_stream($body, $fp);
-        fclose($body);
-    } else {
-        // 文字列のときは普通に書き込む
-        echo $body;
-        fwrite($fp, $body);
-    }
-}
-
-// レスポンスを返信するが，fcloseで閉じない
-function write_keep($fp, $body, $status, $type) {
-    // 長さを調べる
+/**
+ * ターミナルに書き出しつつ，レスポンスヘッダとレスポンスボディを送信する関数
+ * 接続は再利用するため閉じない
+ *
+ * @param resource $con TCPクライアントソケット
+ * @param resource|string $body ファイルポインタまたは文字列
+ * @param string $status "200 OK" とか "400 Bad Request" とか
+ * @param type $type Content-Type の値． "text/plain" とか "text/html" とか
+ */
+function write_keep($con, $body, $status, $type) {
+    // $body の長さを調べる
     // (接続を再利用するのでキッチリ長さを通知して
     //  レスポンスの終わりを相手に知らせる必要がる)
     if (is_resource($body)) {
@@ -38,49 +36,69 @@ function write_keep($fp, $body, $status, $type) {
     } else {
         $length = strlen($body);
     }
-    write($fp, "HTTP/1.1 $status\r\n");
-    write($fp, "Content-Type: $type\r\n");
-    write($fp, "Content-Length: $length\r\n");
-    // ↓ HTTP/1.1では実はこっちがデフォルトなので省略していい
-    //   HTTP/1.0で再利用をやりたいときは必須
-    // write($fp, "Connection: keep-alive\r\n");
-    write($fp, "\r\n");
-    write($fp, $body);
+    // 処理用の一時的な関数を作成して変数に代入
+    $write = function ($body) use ($con) {
+        if (is_resource($body)) {
+            // ファイルポインタのときは内容をそのまま移す
+            // ターミナルへの表示は省略する
+            echo "…データ…\r\n";
+            stream_copy_to_stream($body, $con);
+            fclose($body);
+        } else {
+            // 文字列のときは普通に書き込む
+            echo $body;
+            fwrite($con, $body);
+        }
+    };
+    $write("HTTP/1.1 $status\r\n");
+    $write("Content-Type: $type\r\n");
+    $write("Content-Length: $length\r\n");
+    $write("\r\n");
+    $write($body);
+    $write("\r\n");
     echo "----------------\r\n\r\n";
 }
 
-// 新たな接続を受け付けつつ，既存の接続も管理し，
-// 相手からリクエストヘッダが送信されてきた接続を無限に列挙する
-// …というジェネレータを返す関数
+/**
+ * 新たな接続を受け付けつつ，既存の接続も管理し，
+ * リクエストが送信されてきたTCPクライアントソケットを列挙するジェネレータ関数
+ *
+ * @param resource $srv TCPサーバソケット
+ * @return Generator
+ */
 function accept($srv) {
-    $fps = [];
-    // 無限ループ
+    // TCPクライアントソケットのプール
+    $cons = [];
+    // 無限ループする
+    // (ジェネレータの yield を使っているので呼び出し元の foreach は進む)
     while (true) {
-        // 古い接続が10個を超えたら古いものから削除
-        $fps = array_slice($fps, -10);
-        // 読み出せる接続を監視
-        $read = array_merge($fps, [$srv]);
+        // 持続中のTCPクライアントソケットが10個を超えたら古いものから削除
+        $cons = array_slice($cons, -10);
+        // リクエストが送信されてきた，あるいはWebブラウザが破棄した
+        // TCPクライアントソケットがあるかどうか監視する
+        $read = array_merge($cons, [$srv]);
         $null = null;
         if (stream_select($read, $null, $null, 5) > 0) {
-            foreach ($read as $i => $fp) {
-                // サーバソケットの場合はクライアントソケットを受け入れる
-                if ($fp === $srv) {
-                    $fp = stream_socket_accept($srv, 0);
-                    echo "# New connection has been established! ($fp)\r\n\r\n";
+            // 監視対象として見つかったものだけが $read の配列に残る
+            foreach ($read as $i => $socket) {
+                // サーバソケットの場合はクライアントソケットを受け入れてプールに追加する
+                if ($socket === $srv) {
+                    $con = stream_socket_accept($srv, 0);
+                    echo "# New connection has been established! ($con)\r\n\r\n";
                     echo "------------------\r\n\r\n";
-                    $fps[] = $fp;
+                    $cons[] = $con;
                     continue;
                 }
-                // 既に終端に達しているクライアントソケットは削除する
-                if (stream_get_meta_data($fp)['eof']) {
-                    echo "# Connection has been expired... ($fp)\r\n\r\n";
+                // Webブラウザが破棄したクライアントソケットは削除する
+                if (stream_get_meta_data($socket)['eof']) {
+                    echo "# Connection has been expired... ($socket)\r\n\r\n";
                     echo "------------------\r\n\r\n";
-                    fclose($fp);
-                    unset($fps[$i]);
+                    fclose($socket);
+                    unset($cons[$i]);
                     continue;
                 }
                 // 有効なクライアントソケットは foreach の値として列挙する
-                yield $fp;
+                yield $socket;
             }
         }
     }
@@ -89,30 +107,43 @@ function accept($srv) {
 // 時間無制限
 set_time_limit(0);
 
-$srv = stream_socket_server('tcp://localhost:8080');
-foreach (accept($srv) as $fp) {
+// TCPサーバソケットを生成
+$srv = @stream_socket_server('tcp://localhost:8080');
+if (!$srv) {
+    fwrite(STDERR, error_get_last()['message'] . "\n");
+    exit(1);
+}
+
+// TCPサーバソケットからジェネレータを作成し，
+// 何か動きのあったTCPクライアントソケットの列挙を受け取る
+foreach (accept($srv) as $con) {
 
     // リクエストヘッダを配列で受け取る
-    if (!$lines = readlines($fp)) {
+    if (!$lines = read_headers($con)) {
         // 正常に読み取りきれなかったら無視
         continue;
     }
 
-    // 1行目をスペースで分割
-    $request = explode(' ', $lines[0]);
+    // リクエストラインを解析
+    list($method, $path, $version) = explode(' ', rtrim($lines[0]), 3) + ['', '', ''];
 
-    if ($request[0] !== 'GET') {
+    // ディレクトリトラバーサル攻撃対策
+    if (strpos($path, '..') !== false) {
+        $path = '';
+    }
+
+    if ($method !== 'GET') {
         // GET以外は拒否
         write_keep(
-            $fp,
+            $con,
             'This server supports only GET request',
             '400 Bad Request',
             'text/plain'
         );
-    } elseif (!is_file(__DIR__ . '/../assets' . $request[1])) {
+    } elseif (!is_file(__DIR__ . '/../assets' . $path)) {
         // ファイルが見つからない時
         write_keep(
-            $fp,
+            $con,
             'No such file or directory',
             '404 Not Found',
             'text/plain'
@@ -120,10 +151,11 @@ foreach (accept($srv) as $fp) {
     } else {
         // ファイルが見つかった時
         write_keep(
-            $fp,
-            fopen(__DIR__ . '/../assets' . $request[1], 'rb'),
+            $con,
+            fopen(__DIR__ . '/../assets' . $path, 'rb'),
             '200 OK',
-            mime_content_type(__DIR__ . '/../assets' . $request[1])
+            mime_content_type(__DIR__ . '/../assets' . $path)
         );
     }
+
 }
