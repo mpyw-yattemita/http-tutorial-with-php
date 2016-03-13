@@ -54,7 +54,7 @@ while ($con = stream_socket_accept($srv, -1)) {
             '404 Not Found',
             'text/plain'
         );
-    } elseif (pathinfo(parse_url($path, PHP_URL_PATH), PATHINFO_EXTENSION) === 'php') {
+    } elseif (pathinfo($path, PATHINFO_EXTENSION) === 'php') {
         // PHPファイルが見つかった時
         write_php_close($con, __DIR__ . '/../assets' . $path, $lines);
     } else {
