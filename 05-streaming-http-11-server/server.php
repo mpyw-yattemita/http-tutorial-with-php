@@ -42,8 +42,9 @@ function write_close($con, $body, $status, $type) {
             fwrite($con, "$data\r\n");
         }
     };
-    $write("HTTP/1.0 $status");
+    $write("HTTP/1.1 $status");
     $write("Content-Type: $type");
+    $write('Connection: close');
     $write('');
     $write($body);
     echo "----------------\r\n\r\n";
