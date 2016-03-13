@@ -52,3 +52,8 @@ HTTP/1.1に対応したサーバで，assets にあるファイルを返しま�
 
 HTTP/1.1の `Transfer-Encoding: chunked` を利用してストリーミングを実現します．  
 最近はWebSocketを使うほうが主流ですが，依然としてこちらの方法も利用できます．
+
+## 06-php-http-10-server (server.php)
+
+簡易的にPHPを実行します．但し`header`関数などはサポートされていません．  
+`Content-Type: text/html` 固定です．
