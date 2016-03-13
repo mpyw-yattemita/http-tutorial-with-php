@@ -59,6 +59,7 @@ if (!$srv) {
     fwrite(STDERR, error_get_last()['message'] . "\n");
     exit(1);
 }
+echo "Listening HTTP connection on http://localhost:8080...\n";
 
 // TCPクライアントソケットを受け入れる
 while ($con = stream_socket_accept($srv, -1)) {

@@ -113,6 +113,7 @@ if (!$srv) {
     fwrite(STDERR, error_get_last()['message'] . "\n");
     exit(1);
 }
+echo "Listening HTTP connection on http://localhost:8080...\n";
 
 // TCPサーバソケットからジェネレータを作成し，
 // 何か動きのあったTCPクライアントソケットの列挙を受け取る
