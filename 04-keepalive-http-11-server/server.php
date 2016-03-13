@@ -1,5 +1,19 @@
 <?php
 
+// ターミナルに読み出しつつ配列で返す関数
+function readlines($fp) {
+    $lines = [];
+    do {
+        $lines[] = $line = fgets($fp);
+        if ($line === false) {
+            // ブラウザ更新連打してると終端チェックしててもここでfalseになることがある
+            return [];
+        }
+        echo $line;
+    } while ("\r\n" !== $line);
+    return $lines;
+}
+
 // ターミナルに書きつつ相手にも返信する関数
 function write($fp, $body) {
     if (is_resource($body)) {
@@ -32,7 +46,6 @@ function write_keep($fp, $body, $status, $type) {
     // write($fp, "Connection: keep-alive\r\n");
     write($fp, "\r\n");
     write($fp, $body);
-    write($fp, "\r\n");
     echo "----------------\r\n\r\n";
 }
 
@@ -46,20 +59,28 @@ function accept($srv) {
         // 古い接続が10個を超えたら古いものから削除
         $fps = array_slice($fps, -10);
         // 読み出せる接続を監視
-        $read = array_merge([$srv], $fps);
+        $read = array_merge($fps, [$srv]);
         $null = null;
         if (stream_select($read, $null, $null, 5) > 0) {
-            foreach ($read as $fp) {
+            foreach ($read as $i => $fp) {
+                // サーバソケットの場合はクライアントソケットを受け入れる
                 if ($fp === $srv) {
-                    // サーバソケットの場合はクライアントソケットを受け入れる
-                    echo "# New connection accepted !\r\n\r\n";
+                    $fp = stream_socket_accept($srv, 0);
+                    echo "# New connection has been established! ($fp)\r\n\r\n";
                     echo "------------------\r\n\r\n";
-                    $fps[] = stream_socket_accept($srv, -1);
-                } else {
-                    // クライアントソケットの場合は foreach の $fp の値
-                    // として列挙する
-                    yield $fp;
+                    $fps[] = $fp;
+                    continue;
                 }
+                // 既に終端に達しているクライアントソケットは削除する
+                if (stream_get_meta_data($fp)['eof']) {
+                    echo "# Connection has been expired... ($fp)\r\n\r\n";
+                    echo "------------------\r\n\r\n";
+                    fclose($fp);
+                    unset($fps[$i]);
+                    continue;
+                }
+                // 有効なクライアントソケットは foreach の値として列挙する
+                yield $fp;
             }
         }
     }
@@ -72,15 +93,10 @@ $srv = stream_socket_server('tcp://localhost:8080');
 foreach (accept($srv) as $fp) {
 
     // リクエストヘッダを配列で受け取る
-    $lines = [];
-    do {
-        $line = fgets($fp, 4096);
-        if ($line === false) {
-            // 何故かfalseになることがあるのでその場合は中断
-            continue 2;
-        }
-        $lines[] = $line;
-    } while ($line !== "\r\n");
+    if (!$lines = readlines($fp)) {
+        // 正常に読み取りきれなかったら無視
+        continue;
+    }
 
     // 1行目をスペースで分割
     $request = explode(' ', $lines[0]);

@@ -1,5 +1,15 @@
 <?php
 
+// ターミナルに読み出しつつ配列で返す関数
+function readlines($fp) {
+    $lines = [];
+    do {
+        $lines[] = $line = fgets($fp);
+        echo $line;
+    } while ("\r\n" !== $line);
+    return $lines;
+}
+
 // ターミナルに書きつつ相手にも返信する関数
 function write($fp, $body) {
     if (is_resource($body)) {
@@ -32,10 +42,7 @@ $srv = stream_socket_server('tcp://localhost:8080');
 while ($fp = stream_socket_accept($srv, -1)) {
 
     // リクエストヘッダを配列で受け取る
-    $lines = [];
-    do {
-        echo $lines[] = $line = fgets($fp);
-    } while ($line !== "\r\n");
+    $lines = readlines($fp);
 
     // 1行目をスペースで分割
     $request = explode(' ', $lines[0]);
