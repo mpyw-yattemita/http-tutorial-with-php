@@ -23,16 +23,26 @@ while ($con = stream_socket_accept($srv, -1)) {
     // リクエストラインを解析
     list($method, $path, $version) = explode(' ', rtrim($lines[0]), 3) + ['', '', ''];
 
+    // クエリを $_GET に格納してパスと分離する
+    parse_str(parse_url($path, PHP_URL_QUERY), $_GET);
+    $path = parse_url($path, PHP_URL_PATH);
+    $_SERVER['REQUEST_METHOD'] = $method;
+
+    // Content-Length ヘッダがあれば $_POST に格納
+    if (preg_match('@^Content-Length: (\d+)@m', implode("\n", $lines), $m)) {
+        parse_str(fread($con, $m[1]), $_POST);
+    }
+
     // ディレクトリトラバーサル攻撃対策
     if (strpos($path, '..') !== false) {
         $path = '';
     }
 
-    if ($method !== 'GET') {
-        // GET以外は拒否
+    if ($method !== 'GET' && $method !== 'POST') {
+        // GETとPOST以外は拒否
         write_close(
             $con,
-            'This server supports only GET request',
+            'This server supports only GET or POST request',
             '400 Bad Request',
             'text/plain'
         );
@@ -44,9 +54,9 @@ while ($con = stream_socket_accept($srv, -1)) {
             '404 Not Found',
             'text/plain'
         );
-    } elseif (pathinfo($path, PATHINFO_EXTENSION) === 'php') {
+    } elseif (pathinfo(parse_url($path, PHP_URL_PATH), PATHINFO_EXTENSION) === 'php') {
         // PHPファイルが見つかった時
-        write_php_close($con, __DIR__ . '/../assets' . $path);
+        write_php_close($con, __DIR__ . '/../assets' . $path, $lines);
     } else {
         // その他のファイルが見つかった時
         write_close(
@@ -110,12 +120,13 @@ function write_close($con, $body, $status, $type) {
 }
 
 /**
- * ターミナルに書き出しつつ，レスポンスヘッダとレスポンスボディを送信して閉じる関数
+ * PHPコードを評価した結果をレスポンスボディとして送信して閉じる関数
  *
  * @param resource $con TCPクライアントソケット
  * @param string $filename PHPファイル名
  */
-function write_php_close($con, $filename) {
+function write_php_close($con, $filename, array $headers) {
+    // PHPスクリプトを実行して出力を取得
     ob_start();
     require $filename;
     $output = ob_get_clean();
