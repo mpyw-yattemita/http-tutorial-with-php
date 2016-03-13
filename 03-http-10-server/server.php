@@ -1,55 +1,5 @@
 <?php
 
-/**
- * ターミナルに読み出しつつ，リクエストヘッダを配列で返す関数
- *
- * @param resource $con TCPクライアントソケット
- * @return array HTTPリクエストヘッダの配列
- */
-function read_headers($con) {
-    $lines = [];
-    while (true) {
-        $line = fgets($con);
-        if ($line === false) return []; // ブラウザ更新連打対策
-        echo $line;
-        if ($line === "\r\n") break; // 空行が現れたらそこで終わりとみなす
-        $lines[] = $line;
-    }
-    return $lines;
-}
-
-/**
- * ターミナルに書き出しつつ，レスポンスヘッダとレスポンスボディを送信して閉じる関数
- *
- * @param resource $con TCPクライアントソケット
- * @param resource|string $body ファイルポインタまたは文字列
- * @param string $status "200 OK" とか "400 Bad Request" とか
- * @param type $type Content-Type の値． "text/plain" とか "text/html" とか
- */
-function write_close($con, $body, $status, $type) {
-    // 処理用の一時的な関数を作成して変数に代入
-    $write = function ($data) use ($con) {
-        if (is_resource($data)) {
-            // ファイルポインタのときは内容をそのまま移す
-            // ターミナルへの表示は省略する
-            echo "…データ…\r\n";
-            stream_copy_to_stream($data, $con);
-            fwrite($con, "\r\n");
-            fclose($data);
-        } else {
-            // 文字列のときは普通に書き込む
-            echo "$data\r\n";
-            fwrite($con, "$data\r\n");
-        }
-    };
-    $write("HTTP/1.0 $status");
-    $write("Content-Type: $type");
-    $write('');
-    $write($body);
-    echo "----------------\r\n\r\n";
-    fclose($con);
-}
-
 // 時間無制限
 set_time_limit(0);
 
@@ -104,4 +54,54 @@ while ($con = stream_socket_accept($srv, -1)) {
         );
     }
 
+}
+
+/**
+ * ターミナルに読み出しつつ，リクエストヘッダを配列で返す関数
+ *
+ * @param resource $con TCPクライアントソケット
+ * @return array HTTPリクエストヘッダの配列
+ */
+function read_headers($con) {
+    $lines = [];
+    while (true) {
+        $line = fgets($con);
+        if ($line === false) return []; // ブラウザ更新連打対策
+        echo $line;
+        if ($line === "\r\n") break; // 空行が現れたらそこで終わりとみなす
+        $lines[] = $line;
+    }
+    return $lines;
+}
+
+/**
+ * ターミナルに書き出しつつ，レスポンスヘッダとレスポンスボディを送信して閉じる関数
+ *
+ * @param resource $con TCPクライアントソケット
+ * @param resource|string $body ファイルポインタまたは文字列
+ * @param string $status "200 OK" とか "400 Bad Request" とか
+ * @param type $type Content-Type の値． "text/plain" とか "text/html" とか
+ */
+function write_close($con, $body, $status, $type) {
+    // 処理用の一時的な関数を作成して変数に代入
+    $write = function ($data) use ($con) {
+        if (is_resource($data)) {
+            // ファイルポインタのときは内容をそのまま移す
+            // ターミナルへの表示は省略する
+            echo "…データ…\r\n";
+            stream_copy_to_stream($data, $con);
+            fwrite($con, "\r\n");
+            fclose($data);
+        } else {
+            // 文字列のときは普通に書き込む
+            echo "$data\r\n";
+            fwrite($con, "$data\r\n");
+        }
+    };
+    $write("HTTP/1.0 $status");
+    $write("Content-Type: $type");
+    $write('');
+    $write($body);
+    echo "----------------\r\n\r\n";
+    fclose($con);
 }

@@ -1,5 +1,64 @@
 <?php
 
+// 時間無制限
+set_time_limit(0);
+
+// TCPサーバソケットを生成
+$srv = @stream_socket_server('tcp://localhost:8080');
+if (!$srv) {
+    fwrite(STDERR, error_get_last()['message'] . "\n");
+    exit(1);
+}
+echo "Listening HTTP connection on http://localhost:8080...\n";
+
+// TCPクライアントソケットを受け入れる
+while ($con = stream_socket_accept($srv, -1)) {
+
+    // リクエストヘッダを配列で受け取る
+    if (!$lines = read_headers($con)) {
+        // 正常に読み取りきれなかったら無視
+        continue;
+    }
+
+    // リクエストラインを解析
+    list($method, $path, $version) = explode(' ', rtrim($lines[0]), 3) + ['', '', ''];
+
+    // ディレクトリトラバーサル攻撃対策
+    if (strpos($path, '..') !== false) {
+        $path = '';
+    }
+
+    if ($method !== 'GET') {
+        // GET以外は拒否
+        write_close(
+            $con,
+            'This server supports only GET request',
+            '400 Bad Request',
+            'text/plain'
+        );
+    } elseif ($path === '/api/streaming') {
+        // ストリーミングAPIにアクセスがきた時
+        write_streaming_close($con);
+    } elseif (!is_file(__DIR__ . '/../assets' . $path)) {
+        // ファイルが見つからない時
+        write_close(
+            $con,
+            'No such file or directory',
+            '404 Not Found',
+            'text/plain'
+        );
+    } else {
+        // ファイルが見つかった時
+        write_close(
+            $con,
+            fopen(__DIR__ . '/../assets' . $path, 'rb'),
+            '200 OK',
+            mime_content_type(__DIR__ . '/../assets' . $path)
+        );
+    }
+
+}
+
 /**
  * ターミナルに読み出しつつ，リクエストヘッダを配列で返す関数
  *
@@ -81,63 +140,4 @@ function write_streaming_close($con) {
     $write_chunk('');
     echo "----------------\r\n\r\n";
     fclose($con);
-}
-
-// 時間無制限
-set_time_limit(0);
-
-// TCPサーバソケットを生成
-$srv = @stream_socket_server('tcp://localhost:8080');
-if (!$srv) {
-    fwrite(STDERR, error_get_last()['message'] . "\n");
-    exit(1);
-}
-echo "Listening HTTP connection on http://localhost:8080...\n";
-
-// TCPクライアントソケットを受け入れる
-while ($con = stream_socket_accept($srv, -1)) {
-
-    // リクエストヘッダを配列で受け取る
-    if (!$lines = read_headers($con)) {
-        // 正常に読み取りきれなかったら無視
-        continue;
-    }
-
-    // リクエストラインを解析
-    list($method, $path, $version) = explode(' ', rtrim($lines[0]), 3) + ['', '', ''];
-
-    // ディレクトリトラバーサル攻撃対策
-    if (strpos($path, '..') !== false) {
-        $path = '';
-    }
-
-    if ($method !== 'GET') {
-        // GET以外は拒否
-        write_close(
-            $con,
-            'This server supports only GET request',
-            '400 Bad Request',
-            'text/plain'
-        );
-    } elseif ($path === '/api/streaming') {
-        // ストリーミングAPIにアクセスがきた時
-        write_streaming_close($con);
-    } elseif (!is_file(__DIR__ . '/../assets' . $path)) {
-        // ファイルが見つからない時
-        write_close(
-            $con,
-            'No such file or directory',
-            '404 Not Found',
-            'text/plain'
-        );
-    } else {
-        // ファイルが見つかった時
-        write_close(
-            $con,
-            fopen(__DIR__ . '/../assets' . $path, 'rb'),
-            '200 OK',
-            mime_content_type(__DIR__ . '/../assets' . $path)
-        );
-    }
-
 }
