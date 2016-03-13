@@ -50,6 +50,38 @@ function write_close($con, $body, $status, $type) {
     fclose($con);
 }
 
+/**
+ * ターミナルに書き出しつつ，レスポンスヘッダとレスポンスボディを送信して閉じる関数
+ * ストリーミング用に1行ごとのテキストを返します
+ *
+ * @param resource $con TCPクライアントソケット
+ */
+function write_streaming_close($con) {
+    // 処理用の一時的な関数を作成して変数に代入
+    $write = function ($data) use ($con) {
+        echo "$data\r\n";
+        fwrite($con, "$data\r\n");
+    };
+    $write_chunk = function ($data) use ($write) {
+        // 16進数でこれから送るデータの長さをあらかじめ送信しておく
+        $write(base_convert(strlen($data), 10, 16));
+        // データ本体を送信
+        $write($data);
+    };
+    $write('HTTP/1.1 200 OK');
+    $write('Content-Type: text/event-strem');
+    $write('Connection: close');
+    $write('Transfer-Encoding: chunked');
+    $write('');
+    for ($i = 0; $i < 3; ++$i) {
+        $write_chunk("Hello, World [$i]\n");
+        sleep(1);
+    }
+    $write_chunk('');
+    echo "----------------\r\n\r\n";
+    fclose($con);
+}
+
 // 時間無制限
 set_time_limit(0);
 
@@ -85,6 +117,9 @@ while ($con = stream_socket_accept($srv, -1)) {
             '400 Bad Request',
             'text/plain'
         );
+    } elseif ($path === '/api/streaming') {
+        // ストリーミングAPIにアクセスがきた時
+        write_streaming_close($con);
     } elseif (!is_file(__DIR__ . '/../assets' . $path)) {
         // ファイルが見つからない時
         write_close(

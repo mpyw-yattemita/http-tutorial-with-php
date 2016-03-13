@@ -37,25 +37,25 @@ function write_keep($con, $body, $status, $type) {
         $length = strlen($body);
     }
     // 処理用の一時的な関数を作成して変数に代入
-    $write = function ($body) use ($con) {
-        if (is_resource($body)) {
+    $write = function ($data) use ($con) {
+        if (is_resource($data)) {
             // ファイルポインタのときは内容をそのまま移す
             // ターミナルへの表示は省略する
             echo "…データ…\r\n";
-            stream_copy_to_stream($body, $con);
-            fclose($body);
+            stream_copy_to_stream($data, $con);
+            fwrite($con, "\r\n");
+            fclose($data);
         } else {
             // 文字列のときは普通に書き込む
-            echo $body;
-            fwrite($con, $body);
+            echo "$data\r\n";
+            fwrite($con, "$data\r\n");
         }
     };
-    $write("HTTP/1.1 $status\r\n");
-    $write("Content-Type: $type\r\n");
-    $write("Content-Length: $length\r\n");
-    $write("\r\n");
+    $write("HTTP/1.1 $status");
+    $write("Content-Type: $type");
+    $write("Content-Length: $length");
+    $write('');
     $write($body);
-    $write("\r\n");
     echo "----------------\r\n\r\n";
 }
 

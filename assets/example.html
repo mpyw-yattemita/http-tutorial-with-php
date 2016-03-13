@@ -2,6 +2,56 @@
 <meta charset="UTF-8">
 <title>Example</title>
 <h1>Hello, World</h1>
-<img src="yj.jpg" width="200">
-<img src="mur.jpg" width="200">
-<img src="kmr.jpg" width="200">
+<p>
+  <img src="yj.jpg" width="200">
+  <img src="mur.jpg" width="200">
+  <img src="kmr.jpg" width="200">
+</p>
+<p>
+  <textarea id="response" rows="5" cols="20"></textarea><br>
+  <button id="nazo">謎のボタン</button>
+</p>
+<script>
+  
+  /* 05-streaming-http-11-server 専用 */
+  
+  var area = document.querySelector('#response');
+  var nazo = document.querySelector('#nazo');
+  
+  // ボタンのクリックイベントを登録
+  nazo.addEventListener('click', function () {
+    
+    // 実行中は2回目のクリックを防ぐ
+    nazo.disabled = true;
+    
+    // Ajax通信を行うためにXMLHttpRequestオブジェクトを生成
+    var xhr = new XMLHttpRequest;
+    xhr.open('get', '/api/streaming', true);
+    xhr.onreadystatechange = function () {
+      if (xhr.status === 200 && this.readyState === 3) {
+        // chunkの一部分が返ってきたときテキストエリアを更新
+        area.textContent = this.responseText;
+        return;
+      }
+      if (xhr.status === 200 && this.readyState === 4) {
+        // chunkが全て返ってきたときテキストエリアを更新
+        area.textContent += 'Finished !!';
+        // 終わったのでボタンを復活
+        nazo.disabled = false;
+        return;
+      }
+      if (xhr.status !== 200 && this.readyState === 4) {
+        // エラー時
+        alert('05-streaming-http-11-server のみ対応です！');
+        // 終わったのでボタンを復活
+        nazo.disabled = false;
+        return;
+      }
+    };
+    
+    // HTTPリクエストを実行
+    xhr.send();
+    
+  });
+
+</script>
