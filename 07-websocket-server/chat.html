@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<title>Example</title>
+<h1>手抜きChat</h1>
+<p>
+  <button id="join">参加</button>
+  <button id="exit" disabled>退室</button>
+  <form>
+    <input type="text" id="text" value="" disabled>
+    <button type="submit" id="say" disabled>発言</button>
+  </form>
+  <ul id="events">
+  </ul>
+</p>
+<script>
+
+  /* 07-websocket-server 専用 */
+
+  var ws = null;
+  var join = document.querySelector('#join');
+  var exit = document.querySelector('#exit');
+  var text = document.querySelector('#text');
+  var say = document.querySelector('#say');
+  var events = document.querySelector('#events');
+
+  // 参加ボタンのクリックイベントを登録
+  join.addEventListener('click', function () {
+    join.disabled = true;
+    exit.disabled = false;
+    text.disabled = false;
+    say.disabled = false;
+    ws = new WebSocket('ws://localhost:8080/');
+    ws.onmessage = function (event) {
+      // 新しいデータからリストアイテムを作成
+      var li = document.createElement('li');
+      li.textContent = JSON.parse(event.data).data;
+      // 最大で10個保持
+      while (events.children.length > 9) {
+        events.removeChild(events.lastChild);
+      }
+      // 追加
+      events.firstChild
+        ? events.insertBefore(li, events.firstChild)
+        : events.appendChild(li);
+    };
+  });
+
+  // 退室ボタンのクリックイベントを登録
+  exit.addEventListener('click', function () {
+    join.disabled = false;
+    exit.disabled = true;
+    text.disabled = true;
+    text.value = '';
+    say.disabled = true;
+    ws.close();
+  });
+
+  // 発言ボタンのクリックイベントを登録
+  say.addEventListener('click', function (e) {
+    e.preventDefault();
+    ws.send(text.value);
+    text.value = '';
+  });
+
+</script>

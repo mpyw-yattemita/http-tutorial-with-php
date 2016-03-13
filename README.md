@@ -50,10 +50,18 @@ HTTP/1.1に対応したサーバで，assets にあるファイルを返しま�
 
 ## 05-streaming-http-11-server (server.php)
 
+HTTP/1.1に対応したサーバで，assets にあるファイルを返します．  
 HTTP/1.1の `Transfer-Encoding: chunked` を利用してストリーミングを実現します．  
 最近はWebSocketを使うほうが主流ですが，依然としてこちらの方法も利用できます．
 
 ## 06-php-http-10-server (server.php)
 
+HTTP/1.0に対応したサーバで，assets にあるファイルを返します．  
 簡易的にPHPを実行します．但し`header`関数などはサポートされていません．  
 `Content-Type: text/html` 固定です．
+
+## 07-websocket-server (server.php)
+
+HTTP/1.1およびWebSocketに対応したサーバです．  
+どのURLにアクセスしても手抜きチャット(chat.html)を表示します．  
+名前も決められないぐらい手抜きです．
