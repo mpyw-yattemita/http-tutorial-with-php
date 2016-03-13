@@ -38,29 +38,29 @@ TCP接続を要求し，サーバからデータを受信します．
 server.php と client.php をいい感じに自動実行＆自動終了してくれるシェルスクリプトです．  
 クライアントは2人分実行します．別にこれに頼らず手動で各PHPスクリプトを実行しても構いません．
 
-## 03-http-10-server (server.php)
+## 03-simple-http-server (server.php)
 
 HTTP/1.0に対応したサーバで，assets にあるファイルを返します．  
 **TCPコネクションを1ファイルごとに毎回生成します．**
 
-## 04-keepalive-http-11-server (server.php)
+## 04-keepalive-http-server (server.php)
 
 HTTP/1.1に対応したサーバで，assets にあるファイルを返します．  
 **TCPコネクションを再利用します．**
 
-## 05-streaming-http-11-server (server.php)
+## 05-streaming-http-server (server.php)
 
 HTTP/1.1に対応したサーバで，assets にあるファイルを返します．  
 HTTP/1.1の `Transfer-Encoding: chunked` を利用してストリーミングを実現します．  
 最近はWebSocketを使うほうが主流ですが，依然としてこちらの方法も利用できます．
 
-## 06-php-http-10-server (server.php)
+## 06-php-http-server (server.php)
 
 HTTP/1.0に対応したサーバで，assets にあるファイルを返します．  
 簡易的にPHPを実行します．但し`header`関数などはサポートされていません．  
 `Content-Type: text/html` 固定です．
 
-## 07-websocket-server (server.php)
+## 07-websocket-http-server (server.php)
 
 HTTP/1.1およびWebSocketに対応したサーバです．  
 どのURLにアクセスしても手抜きチャット(chat.html)を表示します．  

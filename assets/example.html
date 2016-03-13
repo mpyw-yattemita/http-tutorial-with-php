@@ -13,7 +13,7 @@
 </p>
 <script>
   
-  /* 05-streaming-http-11-server 専用 */
+  /* 05-streaming-http-server 専用 */
   
   var area = document.querySelector('#response');
   var nazo = document.querySelector('#nazo');
@@ -42,7 +42,7 @@
       }
       if (xhr.status !== 200 && this.readyState === 4) {
         // エラー時
-        alert('05-streaming-http-11-server のみ対応です！');
+        alert('05-streaming-http-server のみ対応です！');
         // 終わったのでボタンを復活
         nazo.disabled = false;
         return;
