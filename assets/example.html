@@ -28,23 +28,21 @@
     var xhr = new XMLHttpRequest;
     xhr.open('get', '/api/streaming', true);
     xhr.onreadystatechange = function () {
-      if (xhr.status === 200 && this.readyState === 3) {
+      if (this.status === 200 && this.readyState === 3) {
         // chunkの一部分が返ってきたときテキストエリアを更新
         area.textContent = this.responseText;
         return;
       }
-      if (xhr.status === 200 && this.readyState === 4) {
-        // chunkが全て返ってきたときテキストエリアを更新
+      if (this.status === 200 && this.readyState === 4) {
+        // 終了時
         area.textContent += 'Finished !!';
-        // 終わったのでボタンを復活
-        nazo.disabled = false;
+        nazo.disabled = false; // ボタン復活
         return;
       }
-      if (xhr.status !== 200 && this.readyState === 4) {
+      if (this.status !== 200 && this.readyState === 4) {
         // エラー時
         alert('05-streaming-http-server のみ対応です！');
-        // 終わったのでボタンを復活
-        nazo.disabled = false;
+        nazo.disabled = false; // ボタン復活
         return;
       }
     };
