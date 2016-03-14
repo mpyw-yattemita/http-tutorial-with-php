@@ -21,7 +21,8 @@ if (!$srv) {
 echo "Listening TCP connection on localhost:8080...\n";
 
 // TCPクライアントソケットを受け入れる
-while ($con = @stream_socket_accept($srv, -1)) {
+// stream_socket_acceptが失敗することがあるので while から do if ... while に変更しました
+do if ($con = @stream_socket_accept($srv, -1)) {
     // プロセスを分岐する
     // 親プロセスは直ちに次の stream_socket_accept の待機に戻る
     // 子プロセスはそのまま下の for に続く
@@ -40,4 +41,4 @@ while ($con = @stream_socket_accept($srv, -1)) {
     fclose($con);
     // 子プロセスを終了
     exit(0);
-}
+} while (true);
