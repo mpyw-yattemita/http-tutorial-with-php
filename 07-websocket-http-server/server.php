@@ -45,7 +45,7 @@ while (true) {
         }
 
         // Webブラウザが破棄したクライアントソケットは削除する
-        if (stream_get_meta_data($socket)['eof']) {
+        if (feof($socket)) {
             if (isset($websockets[(string)$socket])) {
                 // もしWebSocket用のものであれば，自分以外の全員に退出を通知する
                 unset($websockets[(string)$socket]);

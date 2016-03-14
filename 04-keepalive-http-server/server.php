@@ -147,7 +147,7 @@ function accept($srv) {
                     continue;
                 }
                 // Webブラウザが破棄したクライアントソケットは削除する
-                if (stream_get_meta_data($socket)['eof']) {
+                if (feof($socket)) {
                     echo "# Connection has been expired... ($socket)\r\n\r\n";
                     echo "------------------\r\n\r\n";
                     fclose($socket);
