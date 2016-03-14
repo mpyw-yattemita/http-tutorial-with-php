@@ -4,6 +4,8 @@ Apacheとか`php -S`を使わずにPHP自身で簡易的なHTTPサーバにな�
 
 ## 01-simple-client-server
 
+難易度: ★☆☆☆☆
+
 HTTPはまだ使わずにTCPでやりとりするだけです．
 
 ### server.php
@@ -21,6 +23,8 @@ server.php と client.php をいい感じに自動実行＆自動終了してく
 クライアントは2人分実行します．別にこれに頼らず手動で各PHPスクリプトを実行しても構いません．
 
 ## 02-fork-tcp-client-server
+
+難易度: ★★☆☆☆
 
 01-simple-client-serverの同時処理版です．  
 
@@ -40,15 +44,21 @@ server.php と client.php をいい感じに自動実行＆自動終了してく
 
 ## 03-simple-http-server (server.php)
 
+難易度: ★★☆☆☆
+
 HTTP/1.0に対応したサーバで，assets にあるファイルを返します．  
 **TCPコネクションを1ファイルごとに毎回生成します．**
 
 ## 04-keepalive-http-server (server.php)
 
+難易度: ★★★★☆
+
 HTTP/1.1に対応したサーバで，assets にあるファイルを返します．  
 **TCPコネクションを再利用します．**
 
 ## 05-streaming-http-server (server.php)
+
+難易度: ★★★★☆
 
 HTTP/1.1に対応したサーバで，assets にあるファイルを返します．  
 HTTP/1.1の `Transfer-Encoding: chunked` を利用してストリーミングを実現します．  
@@ -56,11 +66,15 @@ HTTP/1.1の `Transfer-Encoding: chunked` を利用してストリーミングを
 
 ## 06-php-http-server (server.php)
 
+難易度: ★★★☆☆
+
 HTTP/1.0に対応したサーバで，assets にあるファイルを返します．  
 簡易的にPHPを実行します．但し`header`関数などはサポートされていません．  
 `Content-Type: text/html` 固定です．
 
 ## 07-websocket-http-server (server.php)
+
+難易度: ★★★★★
 
 HTTP/1.1およびWebSocketに対応したサーバです．  
 どのURLにアクセスしても手抜きチャット(chat.html)を表示します．  
