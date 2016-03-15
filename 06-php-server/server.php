@@ -56,7 +56,7 @@ while ($con = stream_socket_accept($srv, -1)) {
         );
     } elseif (pathinfo($path, PATHINFO_EXTENSION) === 'php') {
         // PHPファイルが見つかった時
-        write_php_close($con, __DIR__ . '/../assets' . $path, $lines);
+        write_php_close($con, __DIR__ . '/../assets' . $path);
     } else {
         // その他のファイルが見つかった時
         write_close(
@@ -125,7 +125,7 @@ function write_close($con, $body, $status, $type) {
  * @param resource $con TCPクライアントソケット
  * @param string $filename PHPファイル名
  */
-function write_php_close($con, $filename, array $headers) {
+function write_php_close($con, $filename) {
     // PHPスクリプトを実行して出力を取得
     ob_start();
     require $filename;
