@@ -69,7 +69,7 @@ while (true) {
                 // テキストフレームであれば全員に発言を通知
                 write_websocket_message($socket, $websockets, json_encode([
                     'data' => sprintf("User #%d: %s", $socket, $msg->content),
-                ]));
+                ], JSON_UNESCAPED_UNICODE));
             }
             if (is_object($msg) && $msg->opcode === 8) {
                 // 切断通知であれば自分以外の全員に通知
