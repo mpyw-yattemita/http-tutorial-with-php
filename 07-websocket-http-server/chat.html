@@ -29,7 +29,7 @@
     exit.disabled = false;
     text.disabled = false;
     say.disabled = false;
-    ws = new WebSocket('ws://localhost:8080/');
+    ws = new WebSocket('ws://' + location.hostname + ':' + location.port); 
     ws.onmessage = function (event) {
       // 新しいデータからリストアイテムを作成
       var li = document.createElement('li');

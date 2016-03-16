@@ -1,5 +1,9 @@
 <?php
 
+// TCPソケットに使う設定を取得
+// デフォルト値は「localhost:8080」
+$conf = getenv('HTTPTUTE_TCP_SOCK') ?: 'localhost:8080';
+
 // 時間無制限
 set_time_limit(0);
 
@@ -13,12 +17,12 @@ pcntl_signal(SIGCHLD, function ($sig) {
 });
 
 // TCPサーバソケットを生成
-$srv = @stream_socket_server('tcp://localhost:8080');
+$srv = @stream_socket_server("tcp://$conf");
 if (!$srv) {
     fwrite(STDERR, error_get_last()['message'] . "\n");
     exit(1);
 }
-echo "Listening TCP connection on localhost:8080...\n";
+echo "Listening TCP connection on $conf...\n";
 
 // TCPクライアントソケットを受け入れる
 // stream_socket_acceptが失敗することがあるので while から do if ... while に変更しました

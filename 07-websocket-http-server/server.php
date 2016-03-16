@@ -1,15 +1,19 @@
 <?php
 
+// TCPソケットに使う設定を取得
+// デフォルト値は「localhost:8080」
+$conf = getenv('HTTPTUTE_TCP_SOCK') ?: 'localhost:8080';
+
 // 時間無制限
 set_time_limit(0);
 
 // TCPサーバソケットを生成
-$srv = @stream_socket_server('tcp://localhost:8080');
+$srv = @stream_socket_server("tcp://$conf");
 if (!$srv) {
     fwrite(STDERR, error_get_last()['message'] . "\n");
     exit(1);
 }
-echo "Listening HTTP connection on http://localhost:8080...\n";
+echo "Listening HTTP connection on http://$conf...\n";
 
 // HTTP用，WebSocket用それぞれのTCPクライアントソケットプール
 $httpsockets = [];

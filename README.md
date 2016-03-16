@@ -1,6 +1,13 @@
 # PHPでHTTP入門
 
-Apacheとか`php -S`を使わずにPHP自身で簡易的なHTTPサーバになるやつ．
+Apacheとか`php -S`を使わずにPHP自身で簡易的なHTTPサーバになるやつ．  
+
+あらかじめ使用するホストとポートの環境変数を設定しておきます．  
+デフォルト値は以下のように設定されています．
+
+```ShellSession
+example@localhost:~$ export HTTPTUTE_TCP_SOCK='localhost:8080'
+```
 
 ## 01-simple-client-server
 
